@@ -1,0 +1,68 @@
+name: rohitterraformstages
+
+trigger:
+- feature/avinay
+
+pool: 
+  name: Default
+
+stages:
+- stage: TerraformToolInstaller
+  jobs:
+  - job: ToolInstall
+    displayName: Tool Install
+    steps:
+    - task: TerraformInstaller@0
+      displayName: Install Terraform 1.5.7
+      inputs:
+        terraformVersion: 1.5.7
+
+- stage: TerraformInitAndPlan
+  displayName: 'Terraform init and plan'
+  dependsOn: TerraformToolInstaller
+  jobs:
+  - job: TerraformInitAndPlanJob
+    displayName: 'Terraform init and plan'
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: Initialize Terraform
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: avinay
+        backendAzureRmResourceGroupName: save
+        backendAzureRmStorageAccountName: savesa
+        backendAzureRmContainerName: wer
+        backendAzureRmKey: 'mystate.tfstate'
+
+    - task: TerraformTaskV4@4
+      name: terraformPlan
+      displayName: Create Terraform Plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: avinay
+
+- stage: Apply
+  displayName: 'Terraform Apply'
+  dependsOn: TerraformInitAndPlan
+  jobs:
+  - job: TerraformApply
+    displayName: 'Terraform Apply'
+    steps:
+    - task: TerraformTaskV4@4
+      displayName: Initialize Terraform
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: avinay
+        backendAzureRmResourceGroupName: save
+        backendAzureRmStorageAccountName: savesa
+        backendAzureRmContainerName: wer
+        backendAzureRmKey: 'mystate.tfstate'
+    - task: TerraformTaskV4@4
+      displayName: Apply Terraform Plan
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        environmentServiceNameAzureRM: avinay

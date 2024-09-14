@@ -1,0 +1,58 @@
+trigger: none
+
+pool: Default
+
+variables:
+  work_dir: $(System.DefaultWorkingDirectory)
+
+stages:
+- stage: BuildStage
+  displayName: Build Stage
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: NodeTool@0
+      displayName: Node Install tool
+      inputs:
+        versionSource: 'spec'
+        versionSpec: '16.x'
+    
+    - task: Npm@1
+      displayName: npm install at directory
+      inputs:
+        command: 'install'
+        workingDir: '$(work_dir)'
+
+    - task: Npm@1
+      displayName: npm build run
+      inputs:
+        command: 'custom'
+        workingDir: '$(work_dir)'
+        customCommand: 'run build'
+    
+    - task: PowerShell@2
+      displayname: display list
+      inputs:
+        targetType: 'inline'
+        script: 'ls'
+    
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'rohit-Subcription'
+        scriptType: 'ps'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az storage blob directory upload -c rohit --account-name stgrohit -s "$(System.DefaultWorkingDirectory)/build" -d directory --recursive'
+
+- stage: ReleaseStage
+  displayName: Release Stage
+  jobs: 
+  - job: DeployJob
+    displayName: Deploy karenge
+    steps: 
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'rohit-Subcription'
+        scriptType: 'ps'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az storage blob directory download -c rohit --account-name stgrohit -s "directory/build" -d "$(System.DefaultWorkingDirectory)/release" --recursive'
+    
